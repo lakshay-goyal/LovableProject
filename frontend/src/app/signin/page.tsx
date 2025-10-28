@@ -18,7 +18,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (session) {
-      redirect("/dashboard");
+      redirect("/playground");
     }
   }, [session]);
 

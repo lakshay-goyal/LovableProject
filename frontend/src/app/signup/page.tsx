@@ -41,7 +41,7 @@ export default function SignUp() {
         },
         onSuccess: (ctx) => {
           setIsLoading(false);
-          redirect("/dashboard");
+          redirect("/playground");
         }
       });
       if (error) {
@@ -90,7 +90,7 @@ export default function SignUp() {
 
   useEffect(() => {
     if (session) {
-      redirect("/dashboard");
+      redirect("/playground");
     }
   }, [session]);
 

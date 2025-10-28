@@ -74,7 +74,7 @@ export function LoginForm({
         },
         onSuccess: (ctx) => {
           setIsLoading(false);
-          redirect("/dashboard");
+          redirect("/playground");
         }
       });
       if (error) {

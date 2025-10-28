@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import MonacoEditor from "@monaco-editor/react";
 
 import { AppSidebar } from "@/components/Sidebar";
@@ -12,6 +13,8 @@ import {
 } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { authClient } from "@/lib/auth-client";
+import { Spinner } from "@/components/ui/spinner";
 
 interface FileNode {
   title: string;
@@ -28,13 +31,40 @@ interface SelectedFile {
 }
 
 export default function Editor() {
+  const router = useRouter();
   const [fileStructure, setFileStructure] = useState<FileNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<SelectedFile>({
     language: "plaintext",
     value: "// Select a file to view",
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const session = await authClient.getSession();
+        if (session.data?.user) {
+          setIsAuthenticated(true);
+        } else {
+          router.push("/signin");
+          return;
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        router.push("/signin");
+        return;
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     const fetchXML = async () => {
       const response = await fetch("./projectStructure.xml");
       const text = await response.text();
@@ -77,6 +107,23 @@ export default function Editor() {
       });
     }
   };
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen bg-white items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <Spinner className="h-8 w-8" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render the main content if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen w-screen bg-white text-gray-800">
