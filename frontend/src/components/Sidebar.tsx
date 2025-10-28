@@ -14,10 +14,12 @@ interface FileNode {
     children?: FileNode[];
 }
 
-export function AppSidebar({ fileStructure, handleSelect }: {
-    fileStructure: FileNode[],
-    handleSelect: (file: FileNode) => void
-}) {
+interface AppSidebarProps {
+    fileStructure: FileNode[];
+    handleSelect: (file: FileNode) => void;
+}
+
+export function AppSidebar({ fileStructure, handleSelect }: AppSidebarProps) {
     // Separate folders and root files
     const folders = fileStructure.filter(node => !node.isLeaf && node.children);
     const rootFiles = fileStructure.filter(node => node.isLeaf);

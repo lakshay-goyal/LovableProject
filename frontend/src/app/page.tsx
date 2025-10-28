@@ -1,7 +1,8 @@
 "use client";
 
 // import { prisma } from "@repo/db";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { IconCheck, IconInfoCircle, IconPlus } from "@tabler/icons-react"
 import { ArrowUpIcon, Search, PlusIcon, ArrowRight, Shapes } from "lucide-react"
 import { cn } from "../lib/utils"
@@ -26,19 +27,60 @@ import { motion } from "framer-motion"
 import { toast } from "sonner";
 import ProductsList from "@/components/ProductsList";
 import NavigationBar from "@/components/NavigationBar";
+import { authClient } from "@/lib/auth-client";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function Page() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [userQuery, setUserQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   // const user = await prisma.user.findFirst()
 
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const session = await authClient.getSession();
+        if (session.data?.user) {
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
   function submitHandler() {
-    toast.success("Message Sent 🚀", {
-      description: "Your message has been successfully delivered!",
-      action: {
-        label: "Undo",
-        onClick: () => console.log("Undo action"),
-      },
-    });
+    if (!userQuery.trim()) {
+      toast.error("Please enter a query");
+      return;
+    }
+
+    if (isAuthenticated) {
+      // Redirect to playground with the query as a URL parameter
+      router.push(`/playground?query=${encodeURIComponent(userQuery)}`);
+    } else {
+      // Redirect to signin page
+      router.push("/signin");
+    }
+  }
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen bg-black items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <Spinner className="h-8 w-8 text-white" />
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -108,6 +150,14 @@ export default function Page() {
                 <InputGroupTextarea
                   placeholder="Ask, Search or Chat..."
                   className="text-neutral-100 placeholder:text-neutral-500 resize-none"
+                  value={userQuery}
+                  onChange={(e) => setUserQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      submitHandler();
+                    }
+                  }}
                 />
                 <InputGroupAddon align="block-end" className="gap-2">
                   <InputGroupButton

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import MonacoEditor from "@monaco-editor/react";
 
 import { AppSidebar } from "@/components/Sidebar";
@@ -32,6 +32,7 @@ interface SelectedFile {
 
 export default function Editor() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [fileStructure, setFileStructure] = useState<FileNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<SelectedFile>({
     language: "plaintext",
@@ -39,14 +40,20 @@ export default function Editor() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userQuery, setUserQuery] = useState<string | null>(null);
 
-  // Check authentication status
+  // Check authentication status and get query parameter
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const session = await authClient.getSession();
         if (session.data?.user) {
           setIsAuthenticated(true);
+          // Get the query parameter from URL
+          const query = searchParams.get('query');
+          if (query) {
+            setUserQuery(decodeURIComponent(query));
+          }
         } else {
           router.push("/signin");
           return;
@@ -61,43 +68,48 @@ export default function Editor() {
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, searchParams]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
+    
     const fetchXML = async () => {
-      const response = await fetch("./projectStructure.xml");
-      const text = await response.text();
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(text, "application/xml");
+      try {
+        const response = await fetch("./projectStructure.xml");
+        const text = await response.text();
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, "application/xml");
 
-      const parseElement = (element: Element): FileNode => {
-        if (element.tagName === "folder") {
-          return {
-            title: element.getAttribute("name") || "",
-            key: Math.random().toString(),
-            children: Array.from(element.children).map(parseElement),
-          };
-        } else if (element.tagName === "file") {
-          return {
-            title: element.getAttribute("name") || "",
-            key: element.getAttribute("key") || "",
-            isLeaf: true,
-            language: element.getAttribute("language") || "plaintext",
-            content: element.textContent?.trim() || "",
-          };
-        }
-        return { title: "", key: "" };
-      };
+        const parseElement = (element: Element): FileNode => {
+          if (element.tagName === "folder") {
+            return {
+              title: element.getAttribute("name") || "",
+              key: Math.random().toString(),
+              children: Array.from(element.children).map(parseElement),
+            };
+          } else if (element.tagName === "file") {
+            return {
+              title: element.getAttribute("name") || "",
+              key: element.getAttribute("key") || "",
+              isLeaf: true,
+              language: element.getAttribute("language") || "plaintext",
+              content: element.textContent?.trim() || "",
+            };
+          }
+          return { title: "", key: "" };
+        };
 
-      const project = xml.documentElement;
-      const nodes: FileNode[] = Array.from(project.children).map(parseElement);
+        const project = xml.documentElement;
+        const nodes: FileNode[] = Array.from(project.children).map(parseElement);
 
-      setFileStructure(nodes);
+        setFileStructure(nodes);
+      } catch (error) {
+        console.error("Error loading project structure:", error);
+      }
     };
 
     fetchXML();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleSelect = (file: FileNode) => {
     if (file.isLeaf) {
@@ -139,7 +151,10 @@ export default function Editor() {
           <Card className="w-64 h-full border-r border-gray-200 flex flex-col shadow-sm">
             <CardContent className="flex-1 p-0">
               <ScrollArea className="h-full">
-                <AppSidebar fileStructure={fileStructure} handleSelect={handleSelect} />
+                <AppSidebar 
+                  fileStructure={fileStructure} 
+                  handleSelect={handleSelect} 
+                />
               </ScrollArea>
             </CardContent>
           </Card>
