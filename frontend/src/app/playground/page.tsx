@@ -47,6 +47,7 @@ interface FileNode {
   language?: string;
   content?: string;
   children?: FileNode[];
+  path?: string;
 }
 
 interface SelectedFile {
@@ -55,7 +56,7 @@ interface SelectedFile {
 }
 
 export default function Editor() {
-  const { sandboxUrl, isProjectCreating, handleProjectStart } = usePlayground();
+  const { sandboxUrl, isProjectCreating, isFilesLoading, isLLMGenerating, filesRefreshTrigger, setIsFilesLoading, handleProjectStart } = usePlayground();
   
   // Debug state
   console.log('Editor state - sandboxUrl:', sandboxUrl, 'isProjectCreating:', isProjectCreating);
@@ -129,44 +130,31 @@ export default function Editor() {
   useEffect(() => {
     if (!isAuthenticated) return;
     
-    const fetchXML = async () => {
+    const fetchFiles = async () => {
       try {
-        const response = await fetch("./projectStructure.xml");
-        const text = await response.text();
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, "application/xml");
-
-        const parseElement = (element: Element): FileNode => {
-          if (element.tagName === "folder") {
-            return {
-              title: element.getAttribute("name") || "",
-              key: Math.random().toString(),
-              children: Array.from(element.children).map(parseElement),
-            };
-          } else if (element.tagName === "file") {
-            return {
-              title: element.getAttribute("name") || "",
-              key: element.getAttribute("key") || "",
-              isLeaf: true,
-              language: element.getAttribute("language") || "plaintext",
-              content: element.textContent?.trim() || "",
-            };
-          }
-          return { title: "", key: "" };
-        };
-
-        const project = xml.documentElement;
-        const nodes: FileNode[] = Array.from(project.children).map(parseElement);
-
-        setFileStructure(nodes);
-        setFilteredFiles(nodes);
+        const response = await fetch('/api/files');
+        const data = await response.json();
+        
+        if (data.success) {
+          setFileStructure(data.files);
+          setFilteredFiles(data.files);
+          // Clear files loading state after successful fetch
+          setIsFilesLoading(false);
+        } else {
+          console.error("Error loading files:", data.error);
+          setIsFilesLoading(false);
+        }
       } catch (error) {
-        console.error("Error loading project structure:", error);
+        console.error("Error loading files:", error);
+        setIsFilesLoading(false);
       }
     };
 
-    fetchXML();
-  }, [isAuthenticated]);
+    // Only fetch files if not currently loading
+    if (!isFilesLoading) {
+      fetchFiles();
+    }
+  }, [isAuthenticated, filesRefreshTrigger, isFilesLoading]);
 
   // Filter files based on search term
   useEffect(() => {
@@ -197,13 +185,38 @@ export default function Editor() {
     setFilteredFiles(filterFiles(fileStructure));
   }, [searchTerm, fileStructure]);
 
-  const handleSelect = (file: FileNode) => {
+  const handleSelect = async (file: FileNode) => {
     if (file.isLeaf) {
-      setSelectedFile({
-        language: file.language || "plaintext",
-        value: file.content || "// Empty file",
-      });
-      setSelectedFileName(file.title);
+      try {
+        // Show loading state
+        setSelectedFile({
+          language: file.language || "plaintext",
+          value: "// Loading file content...",
+        });
+        setSelectedFileName(file.title);
+
+        // Fetch file content from E2B sandbox
+        const response = await fetch(`/api/files/${encodeURIComponent(file.path || file.key)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          setSelectedFile({
+            language: data.language || file.language || "plaintext",
+            value: data.content || "// Empty file",
+          });
+        } else {
+          setSelectedFile({
+            language: file.language || "plaintext",
+            value: `// Error loading file: ${data.error || 'Unknown error'}`,
+          });
+        }
+      } catch (error) {
+        console.error("Error loading file content:", error);
+        setSelectedFile({
+          language: file.language || "plaintext",
+          value: `// Error loading file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
+      }
     }
   };
 
@@ -225,7 +238,30 @@ export default function Editor() {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full relative">
+      {/* Global Loading Overlay for LLM Generation */}
+      {isLLMGenerating && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
+              <Zap className="w-10 h-10 text-white animate-pulse" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">AI is Generating Your Project</h3>
+              <p className="text-sm text-gray-600 mt-2">Please wait while we create your application...</p>
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+            <div className="mt-4">
+              <Spinner className="h-8 w-8 mx-auto" />
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* File Explorer Sidebar */}
       <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
         {/* Search Input */}
@@ -244,10 +280,19 @@ export default function Editor() {
         {/* File Tree */}
         <ScrollArea className="flex-1">
           <div className="p-4">
-            <AppSidebar 
-              fileStructure={filteredFiles} 
-              handleSelect={handleSelect} 
-            />
+            {isFilesLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="flex flex-col items-center space-y-4">
+                  <Spinner className="w-8 h-8" />
+                  <p className="text-sm text-muted-foreground">Loading file structure...</p>
+                </div>
+              </div>
+            ) : (
+              <AppSidebar 
+                fileStructure={filteredFiles} 
+                handleSelect={handleSelect} 
+              />
+            )}
           </div>
         </ScrollArea>
       </div>

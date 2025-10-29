@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { AppSidebar } from "./Sidebar"
 import CodeEditor from "./CodeEditor";
+import { usePlayground } from "@/contexts/PlaygroundContext";
 
 interface FileNode {
   title: string;
@@ -10,6 +11,7 @@ interface FileNode {
   language?: string;
   content?: string;
   children?: FileNode[];
+  path?: string;
 }
 
 interface SelectedFile {
@@ -18,66 +20,85 @@ interface SelectedFile {
 }
 
 export default function Editor() {
+  const { filesRefreshTrigger, isFilesLoading, setIsFilesLoading } = usePlayground();
   const [fileStructure, setFileStructure] = useState<FileNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<SelectedFile>({
     language: "plaintext",
     value: "// Select a file to view",
   });
 
-  // Parse XML from public/projectStructure.xml
+  // Fetch files from E2B sandbox
   useEffect(() => {
-    const fetchXML = async () => {
-      const response = await fetch("./projectStructure.xml");
-      const text = await response.text();
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(text, "application/xml");
-
-      const parseElement = (element: Element): FileNode => {
-        if (element.tagName === "folder") {
-          return {
-            title: element.getAttribute("name") || "",
-            key: Math.random().toString(),
-            children: Array.from(element.children).map(parseElement),
-          };
-        } else if (element.tagName === "file") {
-          return {
-            title: element.getAttribute("name") || "",
-            key: element.getAttribute("key") || "",
-            isLeaf: true,
-            language: element.getAttribute("language") || "plaintext",
-            content: element.textContent?.trim() || "",
-          };
+    if (isFilesLoading) return;
+    
+    const fetchFiles = async () => {
+      try {
+        const response = await fetch('/api/files');
+        const data = await response.json();
+        
+        if (data.success) {
+          setFileStructure(data.files);
+          setIsFilesLoading(false);
+        } else {
+          console.error("Error loading files:", data.error);
+          setIsFilesLoading(false);
         }
-        return { title: "", key: "" }; // fallback
-      };
-
-      // Get all direct children of project root
-      const project = xml.documentElement;
-      const nodes: FileNode[] = [];
-      
-      Array.from(project.children).forEach(child => {
-        nodes.push(parseElement(child));
-      });
-
-      setFileStructure(nodes);
+      } catch (error) {
+        console.error("Error loading files:", error);
+        setIsFilesLoading(false);
+      }
     };
 
-    fetchXML();
-  }, []);
+    fetchFiles();
+  }, [filesRefreshTrigger, isFilesLoading, setIsFilesLoading]);
 
-  const handleSelect = (file: FileNode) => {
+  const handleSelect = async (file: FileNode) => {
     if (file.isLeaf) {
-      setSelectedFile({
-        language: file.language || "plaintext",
-        value: file.content || "// Empty file",
-      });
+      try {
+        // Show loading state
+        setSelectedFile({
+          language: file.language || "plaintext",
+          value: "// Loading file content...",
+        });
+
+        // Fetch file content from E2B sandbox
+        const response = await fetch(`/api/files/${encodeURIComponent(file.path || file.key)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          setSelectedFile({
+            language: data.language || file.language || "plaintext",
+            value: data.content || "// Empty file",
+          });
+        } else {
+          setSelectedFile({
+            language: file.language || "plaintext",
+            value: `// Error loading file: ${data.error || 'Unknown error'}`,
+          });
+        }
+      } catch (error) {
+        console.error("Error loading file content:", error);
+        setSelectedFile({
+          language: file.language || "plaintext",
+          value: `// Error loading file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
+      }
     }
   };
 
   return (
     <div className="flex h-screen w-screen">
       <div className="w-1/3 h-screen">
-        <AppSidebar fileStructure={fileStructure} handleSelect={handleSelect} />
+        {isFilesLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="text-sm text-muted-foreground">Loading file structure...</p>
+            </div>
+          </div>
+        ) : (
+          <AppSidebar fileStructure={fileStructure} handleSelect={handleSelect} />
+        )}
       </div>
       <CodeEditor selectedFile={selectedFile} />
     </div>

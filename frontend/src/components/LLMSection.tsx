@@ -90,7 +90,7 @@ interface LLMSectionProps {
 }
 
 export default function LLMSection({ userQuery }: LLMSectionProps) {
-  const { handleProjectCreated, handleProjectStart } = usePlayground();
+  const { handleProjectCreated, handleProjectStart, setIsLLMGenerating, refreshFilesAndPreview } = usePlayground();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -164,6 +164,10 @@ export default function LLMSection({ userQuery }: LLMSectionProps) {
         console.log('Project created with sandbox URL:', data.sandboxUrl);
         // Notify parent component about project creation
         handleProjectCreated(data.sandboxUrl);
+        
+        // Fetch updated file structure and preview URL from E2B after successful completion
+        console.log('Fetching updated file structure from E2B...');
+        await refreshFilesAndPreview();
       } else {
         console.log('No sandbox URL in response or API call failed');
       }
@@ -208,6 +212,7 @@ export default function LLMSection({ userQuery }: LLMSectionProps) {
       setIsLoading(false);
       setIsTyping(false);
       setAiThinking(false);
+      setIsLLMGenerating(false);
     }
   };
 
