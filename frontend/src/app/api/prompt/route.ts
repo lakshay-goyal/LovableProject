@@ -3,7 +3,16 @@ import { ChatOpenAI } from '@langchain/openai';
 import { createAgent, DynamicStructuredTool } from 'langchain';
 import { z } from 'zod';
 import { SYSTEM_PROMPT } from './llm/prompt';
-import { createFile, updateFile, deleteFile, readFile } from './llm/tools';
+import { 
+  initializeSandbox, 
+  getSandboxHost, 
+  createFile, 
+  updateFile, 
+  deleteFile, 
+  readFile, 
+  listDirectory,
+  cleanupSandbox 
+} from './llm/tools';
 
 // Initialize the OpenAI model
 const model = new ChatOpenAI({
@@ -12,53 +21,52 @@ const model = new ChatOpenAI({
   openAIApiKey: process.env.OPENAI_API_KEY,
 });
 
-// Define the tools for file operations using LangChain v1.0 DynamicStructuredTool
+
 const tools = [
   new DynamicStructuredTool({
     name: 'createFile',
-    description: 'Create a new file at a specified location',
+    description: 'Create a new file at a specified location in the E2B sandbox',
     schema: z.object({
-      location: z.string().describe('Relative path to the file'),
+      location: z.string().describe('Relative path to the file (e.g., src/App.tsx)'),
       content: z.string().describe('Content of the file'),
     }),
-    func: async ({ location, content }: { location: string; content: string }) => {
-      return await createFile.execute({ location, content });
-    },
+    func: createFile.execute,
   }),
   new DynamicStructuredTool({
     name: 'updateFile',
-    description: 'Update an existing file at a specified location',
+    description: 'Update an existing file at a specified location in the E2B sandbox',
     schema: z.object({
-      location: z.string().describe('Relative path to the file'),
+      location: z.string().describe('Relative path to the file (e.g., src/App.tsx)'),
       content: z.string().describe('New content of the file'),
     }),
-    func: async ({ location, content }: { location: string; content: string }) => {
-      return await updateFile.execute({ location, content });
-    },
+    func: updateFile.execute,
   }),
   new DynamicStructuredTool({
     name: 'deleteFile',
-    description: 'Delete a file at a specified location',
+    description: 'Delete a file at a specified location in the E2B sandbox',
     schema: z.object({
-      location: z.string().describe('Relative path to the file'),
+      location: z.string().describe('Relative path to the file (e.g., src/App.tsx)'),
     }),
-    func: async ({ location }: { location: string }) => {
-      return await deleteFile.execute({ location });
-    },
+    func: deleteFile.execute,
   }),
   new DynamicStructuredTool({
     name: 'readFile',
-    description: 'Read the contents of a file at a specified location',
+    description: 'Read the contents of a file at a specified location in the E2B sandbox',
     schema: z.object({
-      location: z.string().describe('Relative path to the file'),
+      location: z.string().describe('Relative path to the file (e.g., src/App.tsx)'),
     }),
-    func: async ({ location }: { location: string }) => {
-      return await readFile.execute({ location });
-    },
+    func: readFile.execute,
+  }),
+  new DynamicStructuredTool({
+    name: 'listDirectory',
+    description: 'List files and directories in a specified path in the E2B sandbox',
+    schema: z.object({
+      location: z.string().describe('Relative path to the directory (e.g., src/)'),
+    }),
+    func: listDirectory.execute,
   }),
 ];
 
-// Create the agent with LangChain v1.0
 const agent = createAgent({
   model,
   tools,
@@ -77,7 +85,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if OpenAI API key is configured
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         { 
@@ -99,21 +106,38 @@ The application would use React hooks for state management and Tailwind CSS for 
       );
     }
 
+    // Initialize E2B sandbox
+    console.log('🚀 Initializing E2B sandbox...');
+    const sandbox = await initializeSandbox();
+    const sandboxUrl = await getSandboxHost();
+    console.log(`✅ Sandbox initialized at: https://${sandboxUrl}`);
+
     // Execute the agent with the user's message
+    console.log('🤖 Executing agent with message:', message);
     const result = await agent.invoke({
       messages: [
         { role: 'user', content: message }
       ],
     });
 
+    console.log('✅ Agent execution completed');
+
     return NextResponse.json({
       success: true,
       response: result.messages[result.messages.length - 1].content,
-      usage: null, // Usage information not available in this LangChain v1.0 version
+      sandboxUrl: `https://${sandboxUrl}`,
+      usage: null,
     });
 
   } catch (error) {
-    console.error('Error in prompt API:', error);
+    console.error('❌ Error in prompt API:', error);
+    
+    // Cleanup sandbox on error
+    try {
+      await cleanupSandbox();
+    } catch (cleanupError) {
+      console.error('❌ Error cleaning up sandbox:', cleanupError);
+    }
     
     return NextResponse.json(
       { 
@@ -125,14 +149,85 @@ The application would use React hooks for state management and Tailwind CSS for 
   }
 }
 
-// export async function GET() {
-//   return NextResponse.json({
-//     message: 'Prompt API is running',
-//     status: 'ready',
-//     availableTools: tools.map(tool => ({
-//       name: tool.name,
-//       description: tool.description,
-//     })),
-//     systemPrompt: SYSTEM_PROMPT.substring(0, 200) + '...',
-//   });
-// }
+export async function POST(request: NextRequest) {
+  try {
+    const { message } = await request.json();
+
+    if (!message) {
+      return NextResponse.json(
+        { error: 'Message is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { 
+          error: 'OpenAI API key is not configured',
+          message: 'Please set OPENAI_API_KEY environment variable to use LangChain integration',
+        },
+        { status: 500 }
+      );
+    }
+
+    // Initialize E2B sandbox
+    console.log('🚀 Initializing E2B sandbox...');
+    const sandbox = await initializeSandbox();
+    const sandboxUrl = await getSandboxHost();
+    console.log(`✅ Sandbox initialized at: https://${sandboxUrl}`);
+
+    // Execute the agent with the user's message
+    console.log('🤖 Executing agent with message:', message);
+    const result = await agent.invoke({
+      messages: [
+        { role: 'user', content: message }
+      ],
+    });
+
+    console.log('✅ Agent execution completed');
+
+    return NextResponse.json({
+      success: true,
+      response: result.messages[result.messages.length - 1].content,
+      sandboxUrl: `https://${sandboxUrl}`,
+      usage: null,
+    });
+
+  } catch (error) {
+    console.error('❌ Error in prompt API:', error);
+    
+    // Cleanup sandbox on error
+    try {
+      await cleanupSandbox();
+    } catch (cleanupError) {
+      console.error('❌ Error cleaning up sandbox:', cleanupError);
+    }
+    
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE() {
+  try {
+    await cleanupSandbox();
+    return NextResponse.json({
+      success: true,
+      message: 'Sandbox cleaned up successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error cleaning up sandbox:', error);
+    return NextResponse.json(
+      { 
+        error: 'Error cleaning up sandbox',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
