@@ -4,11 +4,21 @@ import { z } from 'zod';
 // Global sandbox instance
 let sandbox: Sandbox | null = null;
 
+// Heartbeat tracking
+let lastActivityTime = Date.now();
+
+// Record activity function
+function recordActivity(action: string) {
+  lastActivityTime = Date.now();
+  console.log(`💓 Activity recorded: ${action} at ${new Date().toISOString()}`);
+}
+
 // Initialize sandbox
 export async function initializeSandbox(): Promise<Sandbox> {
   if (!sandbox) {
     const TEMPLATE_ID = "m9jx9or7gpa5tdf7q7hy";
     sandbox = await Sandbox.create(TEMPLATE_ID);
+    recordActivity('sandbox_initialized');
   }
   return sandbox;
 }
@@ -29,6 +39,7 @@ export const createFile = {
   }),
   execute: async ({ location, content }: { location: string; content: string }) => {
     try {
+      recordActivity('create_file');
       const sandboxInstance = await initializeSandbox();
       
       // Validate file path
@@ -70,6 +81,7 @@ export const updateFile = {
   }),
   execute: async ({ location, content }: { location: string; content: string }) => {
     try {
+      recordActivity('update_file');
       const sandboxInstance = await initializeSandbox();
       
       // Validate file path
@@ -104,6 +116,7 @@ export const deleteFile = {
   }),
   execute: async ({ location }: { location: string }) => {
     try {
+      recordActivity('delete_file');
       const sandboxInstance = await initializeSandbox();
       
       // Validate file path
@@ -138,6 +151,7 @@ export const readFile = {
   }),
   execute: async ({ location }: { location: string }) => {
     try {
+      recordActivity('read_file');
       const sandboxInstance = await initializeSandbox();
       
       // Validate file path
@@ -172,6 +186,7 @@ export const listDirectory = {
   }),
   execute: async ({ location }: { location: string }) => {
     try {
+      recordActivity('list_directory');
       const sandboxInstance = await initializeSandbox();
       
       // Normalize path
@@ -210,6 +225,7 @@ export const listDirectory = {
 export async function cleanupSandbox(): Promise<void> {
   if (sandbox) {
     try {
+      recordActivity('sandbox_cleanup');
       await sandbox.kill();
       sandbox = null;
       console.log('✅ Sandbox cleaned up');
@@ -217,4 +233,9 @@ export async function cleanupSandbox(): Promise<void> {
       console.error('❌ Error cleaning up sandbox:', error);
     }
   }
+}
+
+// Export activity tracking for heartbeat API
+export function getLastActivityTime(): number {
+  return lastActivityTime;
 }

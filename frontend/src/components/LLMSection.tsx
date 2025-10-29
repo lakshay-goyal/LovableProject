@@ -90,7 +90,7 @@ interface LLMSectionProps {
 }
 
 export default function LLMSection({ userQuery }: LLMSectionProps) {
-  const { handleProjectCreated, handleProjectStart, setIsLLMGenerating, refreshFilesAndPreview } = usePlayground();
+  const { handleProjectCreated, handleProjectStart, setIsLLMGenerating, refreshFilesAndPreview, recordActivity } = usePlayground();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -136,6 +136,7 @@ export default function LLMSection({ userQuery }: LLMSectionProps) {
 
   const generateAIResponse = async (userMessage: string) => {
     console.log('generateAIResponse called with:', userMessage);
+    recordActivity('llm_query_start');
     setIsLoading(true);
     setIsTyping(true);
     setAiThinking(true);
@@ -162,6 +163,7 @@ export default function LLMSection({ userQuery }: LLMSectionProps) {
       
       if (data.success && data.sandboxUrl) {
         console.log('Project created with sandbox URL:', data.sandboxUrl);
+        recordActivity('llm_query_success');
         // Notify parent component about project creation
         handleProjectCreated(data.sandboxUrl);
         
@@ -170,6 +172,7 @@ export default function LLMSection({ userQuery }: LLMSectionProps) {
         await refreshFilesAndPreview();
       } else {
         console.log('No sandbox URL in response or API call failed');
+        recordActivity('llm_query_no_sandbox');
       }
 
       // Determine if the response should be treated as code
@@ -194,6 +197,7 @@ export default function LLMSection({ userQuery }: LLMSectionProps) {
       
     } catch (error) {
       console.error('Error calling LLM API:', error);
+      recordActivity('llm_query_error');
       
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),

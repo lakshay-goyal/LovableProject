@@ -16,7 +16,7 @@ import {
 
 // Initialize the OpenAI model
 const model = new ChatOpenAI({
-  model: 'gpt-4o',
+  model: 'gpt-3.5-turbo',
   temperature: 0.7,
   openAIApiKey: process.env.OPENAI_API_KEY,
 });
