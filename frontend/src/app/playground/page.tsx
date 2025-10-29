@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
 import { Spinner } from "@/components/ui/spinner";
+import { usePlayground } from "@/contexts/PlaygroundContext";
 
 interface FileNode {
   title: string;
@@ -54,6 +55,10 @@ interface SelectedFile {
 }
 
 export default function Editor() {
+  const { sandboxUrl, isProjectCreating, handleProjectStart } = usePlayground();
+  
+  // Debug state
+  console.log('Editor state - sandboxUrl:', sandboxUrl, 'isProjectCreating:', isProjectCreating);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [fileStructure, setFileStructure] = useState<FileNode[]>([]);
@@ -69,6 +74,25 @@ export default function Editor() {
   const [activeTab, setActiveTab] = useState("code");
   const [filteredFiles, setFilteredFiles] = useState<FileNode[]>([]);
   const [selectedFileName, setSelectedFileName] = useState("Select a file to view");
+
+  // Debug logging for state changes
+  console.log('Editor state - sandboxUrl:', sandboxUrl, 'isProjectCreating:', isProjectCreating);
+
+  // Auto-switch to preview tab when project is created
+  useEffect(() => {
+    if (sandboxUrl && !isProjectCreating) {
+      console.log('Switching to preview tab because project is ready');
+      setActiveTab("preview");
+    }
+  }, [sandboxUrl, isProjectCreating]);
+
+  // Also switch to preview tab when project creation starts (if user is on code tab)
+  useEffect(() => {
+    if (isProjectCreating && activeTab === "code") {
+      console.log('Switching to preview tab because project creation started');
+      setActiveTab("preview");
+    }
+  }, [isProjectCreating, activeTab]);
 
   // Check authentication status and get query parameter
   useEffect(() => {
@@ -309,12 +333,89 @@ export default function Index() {
           <TabsContent value="preview" className="flex-1 flex flex-col m-0">
             {/* Preview Content */}
             <div className="flex-1 bg-white">
-              <iframe
-                src="/"
-                className="w-full h-full border-0"
-                title="Preview"
-                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
-              />
+              {/* Debug info - remove in production */}
+              <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-1 text-xs text-yellow-700">
+                Debug: sandboxUrl={sandboxUrl ? 'SET' : 'NULL'}, isProjectCreating={isProjectCreating ? 'TRUE' : 'FALSE'}
+                <button 
+                  onClick={() => {
+                    console.log('Test Start button clicked');
+                    handleProjectStart();
+                  }} 
+                  className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                >
+                  Test Start
+                </button>
+                <button 
+                  onClick={async () => {
+                    console.log('Test API button clicked');
+                    try {
+                      const response = await fetch('/api/prompt', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: 'Create a simple hello world app' })
+                      });
+                      const data = await response.json();
+                      console.log('API response:', data);
+                    } catch (error) {
+                      console.error('API error:', error);
+                    }
+                  }} 
+                  className="ml-2 px-2 py-1 bg-green-500 text-white rounded text-xs"
+                >
+                  Test API
+                </button>
+              </div>
+              {isProjectCreating ? (
+                <div className="flex items-center justify-center h-full bg-gray-50">
+                  <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                      <Zap className="w-8 h-8 text-white animate-pulse" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Creating Your Project</h3>
+                      <p className="text-sm text-gray-600 mt-1">AI is building your application...</p>
+                    </div>
+                    <div className="flex items-center justify-center space-x-1">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      This may take a few moments...
+                    </div>
+                  </div>
+                </div>
+              ) : sandboxUrl ? (
+                <div className="flex flex-col h-full">
+                  {/* Success header */}
+                  <div className="bg-green-50 border-b border-green-200 px-4 py-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm text-green-700 font-medium">Project Ready!</span>
+                      <span className="text-xs text-green-600">Live preview below</span>
+                    </div>
+                  </div>
+                  {/* Preview iframe */}
+                  <iframe
+                    src={sandboxUrl}
+                    className="flex-1 w-full border-0"
+                    title="Preview"
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full bg-gray-50">
+                  <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-gray-400 to-gray-500 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                      <Eye className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">No Preview Available</h3>
+                      <p className="text-sm text-gray-600 mt-1">Start a conversation with the AI to create a project</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>

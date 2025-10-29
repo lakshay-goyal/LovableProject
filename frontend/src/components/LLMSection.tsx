@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { usePlayground } from "@/contexts/PlaygroundContext";
 import {
   Sidebar,
   SidebarContent,
@@ -89,6 +90,7 @@ interface LLMSectionProps {
 }
 
 export default function LLMSection({ userQuery }: LLMSectionProps) {
+  const { handleProjectCreated, handleProjectStart } = usePlayground();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -114,10 +116,16 @@ export default function LLMSection({ userQuery }: LLMSectionProps) {
         timestamp: new Date()
       };
       setMessages([initialMessage]);
+      
+      // Notify parent that project creation is starting
+      console.log('Initial message - calling handleProjectStart callback');
+      handleProjectStart();
+      console.log('Initial message - handleProjectStart callback called');
+      
       // Generate AI response
       generateAIResponse(userQuery);
     }
-  }, [userQuery, messages.length]);
+  }, [userQuery, messages.length, handleProjectStart]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -127,49 +135,80 @@ export default function LLMSection({ userQuery }: LLMSectionProps) {
   }, [messages]);
 
   const generateAIResponse = async (userMessage: string) => {
+    console.log('generateAIResponse called with:', userMessage);
     setIsLoading(true);
     setIsTyping(true);
     setAiThinking(true);
     
-    // Simulate AI thinking time with typing indicator
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-    
-    // Generate contextual AI responses based on personality
-    const responses = [
-      "I understand you're asking about that. Let me help you with that topic. Could you provide more specific details about what you'd like to know?",
-      "That's an interesting question! Based on what you've shared, I can suggest a few approaches. What specific aspect would you like me to focus on?",
-      "Great question! I can see you're working on something related to this. Let me break this down into manageable steps for you.",
-      "I'd be happy to help you with that! Could you tell me more about your current setup or what you've tried so far?",
-      "That's a common challenge many developers face. Here are some strategies that might work for your situation...",
-      "Interesting! I can help you explore different solutions for this. What's your main goal with this project?",
-      "I understand what you're looking for. Let me provide some guidance on how to approach this effectively.",
-      "That sounds like a great project! I can help you think through the implementation details. What's your timeline like?"
-    ];
-    
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    
-    // Determine if the response should be treated as code
-    const isCodeResponse = Math.random() > 0.7; // 30% chance of code response
-    const language = isCodeResponse ? 'javascript' : undefined;
-    
-    const aiMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      content: randomResponse,
-      sender: 'ai',
-      timestamp: new Date(),
-      type: isCodeResponse ? 'code' : 'text',
-      isCode: isCodeResponse,
-      language: language,
-      reactions: {
-        thumbsUp: 0,
-        thumbsDown: 0
+    try {
+      // Make actual LLM API call
+      const response = await fetch('/api/prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
-    
-    setMessages(prev => [...prev, aiMessage]);
-    setIsLoading(false);
-    setIsTyping(false);
-    setAiThinking(false);
+
+      const data = await response.json();
+      
+      console.log('LLM Response data:', data);
+      
+      if (data.success && data.sandboxUrl) {
+        console.log('Project created with sandbox URL:', data.sandboxUrl);
+        // Notify parent component about project creation
+        handleProjectCreated(data.sandboxUrl);
+      } else {
+        console.log('No sandbox URL in response or API call failed');
+      }
+
+      // Determine if the response should be treated as code
+      const isCodeResponse = data.response.includes('```') || data.response.includes('function') || data.response.includes('const') || data.response.includes('import');
+      const language = isCodeResponse ? 'javascript' : undefined;
+      
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: data.response || 'I apologize, but I encountered an error processing your request.',
+        sender: 'ai',
+        timestamp: new Date(),
+        type: isCodeResponse ? 'code' : 'text',
+        isCode: isCodeResponse,
+        language: language,
+        reactions: {
+          thumbsUp: 0,
+          thumbsDown: 0
+        }
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+      
+    } catch (error) {
+      console.error('Error calling LLM API:', error);
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: `I apologize, but I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
+        sender: 'ai',
+        timestamp: new Date(),
+        type: 'error',
+        reactions: {
+          thumbsUp: 0,
+          thumbsDown: 0
+        }
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+      setIsTyping(false);
+      setAiThinking(false);
+    }
   };
 
   const handleSendMessage = async () => {
@@ -184,6 +223,11 @@ export default function LLMSection({ userQuery }: LLMSectionProps) {
     
     setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
+    
+    // Notify parent that project creation is starting
+    console.log('Calling handleProjectStart callback');
+    handleProjectStart();
+    console.log('handleProjectStart callback called');
     
     // Generate AI response
     await generateAIResponse(inputMessage.trim());
