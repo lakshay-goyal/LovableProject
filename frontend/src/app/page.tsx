@@ -56,15 +56,51 @@ export default function Page() {
     checkAuth();
   }, []);
 
-  function submitHandler() {
+  async function submitHandler() {
     if (!userQuery.trim()) {
       toast.error("Please enter a query");
       return;
     }
 
     if (isAuthenticated) {
-      // Redirect to playground with the query as a URL parameter
-      router.push(`/playground?query=${encodeURIComponent(userQuery)}`);
+      try {
+        // Create a new project and get the projectID
+        const response = await fetch('/api/projects', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: userQuery,
+            title: userQuery.length > 50 ? userQuery.substring(0, 50) + '...' : userQuery,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create project');
+        }
+
+        const data = await response.json();
+        
+        if (data.success && data.project?.id) {
+          // Show appropriate message based on whether it's a new or existing project
+          if (data.isNewProject) {
+            toast.success("New project created successfully!");
+          } else {
+            toast.success("Returning to existing project");
+          }
+          
+          // Redirect to playground with both query and projectID as URL parameters
+          router.push(`/playground?query=${encodeURIComponent(userQuery)}&projectId=${data.project.id}`);
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      } catch (error) {
+        console.error('Error creating project:', error);
+        toast.error("Failed to create project. Please try again.");
+        // Fallback to redirecting with just the query
+        router.push(`/playground?query=${encodeURIComponent(userQuery)}`);
+      }
     } else {
       // Redirect to signin page
       router.push("/signin");

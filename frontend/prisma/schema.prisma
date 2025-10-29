@@ -18,6 +18,7 @@ model User {
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
+  projects      Project[]
 
   @@unique([email])
   @@map("user")
@@ -66,4 +67,59 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+enum ProjectVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum MessageFrom {
+  USER
+  ASSISTANT
+}
+
+model Project {
+  id         String            @id @default(cuid())
+  title      String
+  visibility ProjectVisibility @default(PUBLIC)
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sandboxId  String?
+  previewUrl String?
+  lastSeenAt DateTime?
+
+  currentSnapshotS3Key String?
+  currentSnapshotAt  DateTime?
+
+  chatHistories ChatHistory[]
+  jobs          Job[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
+
+  @@map("project")
+}
+
+model ChatHistory {
+  id        String      @id @default(cuid())
+  from      MessageFrom
+  content   String?
+  projectId String
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
+
+  @@map("chat_history")
+}
+
+model Job {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("job")
 }

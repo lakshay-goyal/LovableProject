@@ -64,6 +64,7 @@ export default function Editor() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userQuery, setUserQuery] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("code");
   const [filteredFiles, setFilteredFiles] = useState<FileNode[]>([]);
@@ -76,10 +77,14 @@ export default function Editor() {
         const session = await authClient.getSession();
         if (session.data?.user) {
           setIsAuthenticated(true);
-          // Get the query parameter from URL
+          // Get the query and projectId parameters from URL
           const query = searchParams.get('query');
+          const projectIdParam = searchParams.get('projectId');
           if (query) {
             setUserQuery(decodeURIComponent(query));
+          }
+          if (projectIdParam) {
+            setProjectId(projectIdParam);
           }
         } else {
           router.push("/signin");
@@ -226,13 +231,18 @@ export default function Editor() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col bg-white">
         {/* Tabs Header */}
-        <div className="h-12 border-b border-gray-200 flex items-center px-4 bg-gray-50">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="h-12 border-b border-gray-200 flex items-center justify-between px-4 bg-gray-50">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
             <TabsList className="bg-white">
               <TabsTrigger value="code" className="text-sm">Code</TabsTrigger>
               <TabsTrigger value="preview" className="text-sm">Preview</TabsTrigger>
             </TabsList>
           </Tabs>
+          {projectId && (
+            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              Project ID: {projectId}
+            </div>
+          )}
         </div>
 
         {/* Tab Content */}
