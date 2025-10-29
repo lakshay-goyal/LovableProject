@@ -9,7 +9,6 @@ RUN npm create vite@latest . -- --template react && \
 RUN echo "import { defineConfig } from 'vite';\n\
 import react from '@vitejs/plugin-react';\n\
 import tailwindcss from '@tailwindcss/vite';\n\n\
-
 export default defineConfig({\n\
   plugins: [react(), tailwindcss()],\n\
   server: {\n\
