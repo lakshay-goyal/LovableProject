@@ -61,6 +61,9 @@ You have access to the following file operations:
 - readFile: Read file contents
 - listDirectory: List files and directories in a path
 
+RULES:
+- Only works with .jsx and .js files
+
 ## 📋 RESPONSE STRUCTURE REQUIREMENTS
 
 ### CRITICAL: Always follow this structured approach:
