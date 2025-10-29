@@ -1,11 +1,6 @@
 {
   "buildCommand": "npm run build",
   "installCommand": "npm install --legacy-peer-deps && npm rebuild lightningcss --platform=linux --arch=x64",
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "build": {
     "env": {
       "NODE_OPTIONS": "--max-old-space-size=4096"
