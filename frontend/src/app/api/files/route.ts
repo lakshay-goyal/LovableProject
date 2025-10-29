@@ -1,26 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeSandbox } from '../prompt/llm/tools';
 
-// GET /api/files - List all files in the E2B sandbox
 export async function GET(request: NextRequest) {
   try {
     const sandbox = await initializeSandbox();
-    
-    // Get all files and directories recursively
+
     const getAllFiles = async (): Promise<any[]> => {
       try {
-        // First, get all files from the root directory
         const rootItems = await sandbox.files.list('');
         console.log('Root items:', rootItems);
-        
-        // Also check what's in the src directory specifically
+
         try {
           const srcItems = await sandbox.files.list('src/');
           console.log('Src directory items:', srcItems);
         } catch (error) {
           console.log('Error listing src directory:', error);
         }
-        
+
         const getLanguage = (filename: string): string => {
           const ext = filename.split('.').pop()?.toLowerCase();
           const languageMap: { [key: string]: string } = {
@@ -65,42 +61,36 @@ export async function GET(request: NextRequest) {
           return languageMap[ext || ''] || 'plaintext';
         };
 
-        // Recursively process directories
         const processDirectory = async (dirPath: string, items: any[]): Promise<any[]> => {
           const result = [];
           console.log(`Processing directory: ${dirPath}, items:`, items.length);
-          
+
           for (const item of items) {
             const fullPath = dirPath ? `${dirPath}/${item.name}` : item.name;
             console.log(`Processing item: ${item.name}, type: ${item.type}, fullPath: ${fullPath}`);
-            
-            // Skip node_modules and its contents
+
             if (item.name === 'node_modules' || fullPath.includes('node_modules/')) {
               console.log(`Skipping node_modules: ${fullPath}`);
               continue;
             }
-            
-            // Check if it's a directory by trying to list it
+
             let isDirectory = item.type === 'dir';
             if (!isDirectory) {
-              // Try to list it to see if it's actually a directory
               try {
                 const testChildren = await sandbox.files.list(fullPath + '/');
                 isDirectory = true;
                 console.log(`Item ${item.name} is actually a directory (found ${testChildren.length} children)`);
               } catch (error) {
-                // If listing fails, it's definitely a file
                 isDirectory = false;
               }
             }
-            
+
             if (isDirectory) {
-              // Get children for this directory
               console.log(`Getting children for directory: ${fullPath}`);
               const children = await sandbox.files.list(fullPath + '/');
               console.log(`Found ${children.length} children in ${fullPath}:`, children.map(c => c.name));
               const processedChildren = await processDirectory(fullPath, children);
-              
+
               result.push({
                 title: item.name,
                 key: fullPath,
@@ -118,23 +108,21 @@ export async function GET(request: NextRequest) {
               });
             }
           }
-          
+
           console.log(`Processed directory ${dirPath}, returning ${result.length} items`);
           return result;
         };
 
-        // Process root directory
         const fileStructure = await processDirectory('', rootItems);
-        
-        // Filter out system files and show project structure
-        const projectFiles = fileStructure.filter(item => 
-          !item.title.startsWith('.') && 
+
+        const projectFiles = fileStructure.filter(item =>
+          !item.title.startsWith('.') &&
           item.title !== 'package-lock.json'
         );
-        
+
         console.log('Final project files structure:', JSON.stringify(projectFiles, null, 2));
         return projectFiles;
-        
+
       } catch (error) {
         console.error('Error getting all files:', error);
         return [];
@@ -142,7 +130,7 @@ export async function GET(request: NextRequest) {
     };
 
     const fileStructure = await getAllFiles();
-    
+
     return NextResponse.json({
       success: true,
       files: fileStructure
@@ -151,7 +139,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error listing files:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Failed to list files',
         details: error instanceof Error ? error.message : 'Unknown error'

@@ -10,23 +10,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  ChevronDown, 
-  Cloud, 
-  Code, 
-  BarChart3, 
-  Plus, 
-  Eye, 
-  Share, 
-  Github, 
-  Crown, 
-  Upload, 
-  MessageCircle, 
-  Zap, 
-  ArrowRight, 
-  X, 
-  ThumbsUp, 
-  ThumbsDown, 
+import {
+  ChevronDown,
+  Cloud,
+  Code,
+  BarChart3,
+  Plus,
+  Eye,
+  Share,
+  Github,
+  Crown,
+  Upload,
+  MessageCircle,
+  Zap,
+  ArrowRight,
+  X,
+  ThumbsUp,
+  ThumbsDown,
   MoreHorizontal,
   Search
 } from "lucide-react";
@@ -57,8 +57,7 @@ interface SelectedFile {
 
 export default function Editor() {
   const { sandboxUrl, isProjectCreating, isFilesLoading, isLLMGenerating, filesRefreshTrigger, setIsFilesLoading, handleProjectStart } = usePlayground();
-  
-  // Debug state
+
   console.log('Editor state - sandboxUrl:', sandboxUrl, 'isProjectCreating:', isProjectCreating);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -76,10 +75,8 @@ export default function Editor() {
   const [filteredFiles, setFilteredFiles] = useState<FileNode[]>([]);
   const [selectedFileName, setSelectedFileName] = useState("Select a file to view");
 
-  // Debug logging for state changes
   console.log('Editor state - sandboxUrl:', sandboxUrl, 'isProjectCreating:', isProjectCreating);
 
-  // Auto-switch to preview tab when project is created
   useEffect(() => {
     if (sandboxUrl && !isProjectCreating) {
       console.log('Switching to preview tab because project is ready');
@@ -87,7 +84,6 @@ export default function Editor() {
     }
   }, [sandboxUrl, isProjectCreating]);
 
-  // Also switch to preview tab when project creation starts (if user is on code tab)
   useEffect(() => {
     if (isProjectCreating && activeTab === "code") {
       console.log('Switching to preview tab because project creation started');
@@ -95,14 +91,12 @@ export default function Editor() {
     }
   }, [isProjectCreating, activeTab]);
 
-  // Check authentication status and get query parameter
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const session = await authClient.getSession();
         if (session.data?.user) {
           setIsAuthenticated(true);
-          // Get the query and projectId parameters from URL
           const query = searchParams.get('query');
           const projectIdParam = searchParams.get('projectId');
           if (query) {
@@ -129,16 +123,15 @@ export default function Editor() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    
+
     const fetchFiles = async () => {
       try {
         const response = await fetch('/api/files');
         const data = await response.json();
-        
+
         if (data.success) {
           setFileStructure(data.files);
           setFilteredFiles(data.files);
-          // Clear files loading state after successful fetch
           setIsFilesLoading(false);
         } else {
           console.error("Error loading files:", data.error);
@@ -150,13 +143,11 @@ export default function Editor() {
       }
     };
 
-    // Only fetch files if not currently loading
     if (!isFilesLoading) {
       fetchFiles();
     }
   }, [isAuthenticated, filesRefreshTrigger, isFilesLoading]);
 
-  // Filter files based on search term
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredFiles(fileStructure);
@@ -188,17 +179,15 @@ export default function Editor() {
   const handleSelect = async (file: FileNode) => {
     if (file.isLeaf) {
       try {
-        // Show loading state
         setSelectedFile({
           language: file.language || "plaintext",
           value: "// Loading file content...",
         });
         setSelectedFileName(file.title);
 
-        // Fetch file content from E2B sandbox
         const response = await fetch(`/api/files/${encodeURIComponent(file.path || file.key)}`);
         const data = await response.json();
-        
+
         if (data.success) {
           setSelectedFile({
             language: data.language || file.language || "plaintext",
@@ -220,7 +209,6 @@ export default function Editor() {
     }
   };
 
-  // Show loading spinner while checking authentication
   if (isLoading) {
     return (
       <div className="flex h-screen w-screen bg-white items-center justify-center">
@@ -232,14 +220,12 @@ export default function Editor() {
     );
   }
 
-  // Don't render the main content if not authenticated (will redirect)
   if (!isAuthenticated) {
     return null;
   }
 
   return (
     <div className="flex h-full relative">
-      {/* Global Loading Overlay for LLM Generation */}
       {isLLMGenerating && (
         <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="text-center space-y-4">
@@ -261,10 +247,8 @@ export default function Editor() {
           </div>
         </div>
       )}
-      
-      {/* File Explorer Sidebar */}
+
       <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
-        {/* Search Input */}
         <div className="p-4 border-b border-gray-200">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -277,7 +261,6 @@ export default function Editor() {
           </div>
         </div>
 
-        {/* File Tree */}
         <ScrollArea className="flex-1">
           <div className="p-4">
             {isFilesLoading ? (
@@ -288,18 +271,16 @@ export default function Editor() {
                 </div>
               </div>
             ) : (
-              <AppSidebar 
-                fileStructure={filteredFiles} 
-                handleSelect={handleSelect} 
+              <AppSidebar
+                fileStructure={filteredFiles}
+                handleSelect={handleSelect}
               />
             )}
           </div>
         </ScrollArea>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col bg-white">
-        {/* Tabs Header */}
         <div className="h-12 border-b border-gray-200 flex items-center justify-between px-4 bg-gray-50">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
             <TabsList className="bg-white">
@@ -314,17 +295,14 @@ export default function Editor() {
           )}
         </div>
 
-        {/* Tab Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
           <TabsContent value="code" className="flex-1 flex flex-col m-0">
-            {/* File Tab */}
             <div className="h-10 border-b border-gray-200 flex items-center px-4 bg-gray-50">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">{selectedFileName}</span>
               </div>
             </div>
 
-            {/* Code Editor */}
             <div className="flex-1">
               <MonacoEditor
                 height="100%"
@@ -342,7 +320,6 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
-      {/* Navigation */}
       <nav className="fixed top-0 w-full bg-card/80 backdrop-blur-md z-50 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -378,19 +355,18 @@ export default function Index() {
           <TabsContent value="preview" className="flex-1 flex flex-col m-0">
             {/* Preview Content */}
             <div className="flex-1 bg-white">
-              {/* Debug info - remove in production */}
               <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-1 text-xs text-yellow-700">
                 Debug: sandboxUrl={sandboxUrl ? 'SET' : 'NULL'}, isProjectCreating={isProjectCreating ? 'TRUE' : 'FALSE'}
-                <button 
+                <button
                   onClick={() => {
                     console.log('Test Start button clicked');
                     handleProjectStart();
-                  }} 
+                  }}
                   className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs"
                 >
                   Test Start
                 </button>
-                <button 
+                <button
                   onClick={async () => {
                     console.log('Test API button clicked');
                     try {
@@ -404,7 +380,7 @@ export default function Index() {
                     } catch (error) {
                       console.error('API error:', error);
                     }
-                  }} 
+                  }}
                   className="ml-2 px-2 py-1 bg-green-500 text-white rounded text-xs"
                 >
                   Test API
@@ -432,7 +408,6 @@ export default function Index() {
                 </div>
               ) : sandboxUrl ? (
                 <div className="flex flex-col h-full">
-                  {/* Success header */}
                   <div className="bg-green-50 border-b border-green-200 px-4 py-2">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -440,7 +415,6 @@ export default function Index() {
                       <span className="text-xs text-green-600">Live preview below</span>
                     </div>
                   </div>
-                  {/* Preview iframe */}
                   <iframe
                     src={sandboxUrl}
                     className="flex-1 w-full border-0"

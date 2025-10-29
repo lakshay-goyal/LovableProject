@@ -31,10 +31,10 @@ export function useSandboxHeartbeat(options: HeartbeatOptions = {}) {
       }
 
       const data = await response.json();
-      console.log('💓 Heartbeat sent successfully:', data);
+      console.log('Heartbeat sent successfully:', data);
       onSuccess?.();
     } catch (error) {
-      console.error('❌ Heartbeat error:', error);
+      console.error('Heartbeat error:', error);
       onError?.(error as Error);
     }
   }, [onError, onSuccess]);

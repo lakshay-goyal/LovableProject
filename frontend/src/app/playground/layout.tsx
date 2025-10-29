@@ -18,10 +18,7 @@ export default function PlaygroundLayout({
     return (
         <PlaygroundProvider>
             <div className="flex h-screen bg-white">
-                {/* Left Panel - AI Assistant/Chatbot Sidebar */}
                 <LLMSection userQuery={userQuery} />
-                
-                {/* Right Panel - Main Content Area */}
                 <main className="flex-1 flex flex-col bg-white">
                     <div className="flex-1">
                         {children}

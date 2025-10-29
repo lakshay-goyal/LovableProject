@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeSandbox } from '../../prompt/llm/tools';
 
-// GET /api/files/[path] - Get file content from E2B sandbox
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string }> }
@@ -9,17 +8,15 @@ export async function GET(
   try {
     const { path } = await params;
     const decodedPath = decodeURIComponent(path);
-    
-    // Use the path as-is since we're now handling full paths
+
     const fullPath = decodedPath;
-    
+
     const sandbox = await initializeSandbox();
-    
-    // Check if file exists
+
     const exists = await sandbox.files.exists(fullPath);
     if (!exists) {
       return NextResponse.json(
-        { 
+        {
           success: false,
           error: 'File not found',
           details: `File ${fullPath} does not exist`
@@ -27,13 +24,11 @@ export async function GET(
         { status: 404 }
       );
     }
-    
-    // Check if it's a directory by trying to list it
+
     try {
       const dirContents = await sandbox.files.list(fullPath + '/');
-      // If we can list it, it's a directory
       return NextResponse.json(
-        { 
+        {
           success: false,
           error: 'Path is a directory',
           details: `${fullPath} is a directory, not a file`
@@ -41,13 +36,10 @@ export async function GET(
         { status: 400 }
       );
     } catch (dirError) {
-      // If listing fails, it's likely a file, continue with reading
     }
-    
-    // Read file content
+
     const content = await sandbox.files.read(fullPath);
-    
-    // Determine language based on file extension
+
     const getLanguage = (filename: string): string => {
       const ext = filename.split('.').pop()?.toLowerCase();
       const languageMap: { [key: string]: string } = {
@@ -93,7 +85,7 @@ export async function GET(
     };
 
     const language = getLanguage(fullPath);
-    
+
     return NextResponse.json({
       success: true,
       content,
@@ -104,7 +96,7 @@ export async function GET(
   } catch (error) {
     console.error('Error reading file:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Failed to read file',
         details: error instanceof Error ? error.message : 'Unknown error'

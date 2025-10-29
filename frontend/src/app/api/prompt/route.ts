@@ -14,7 +14,6 @@ import {
   cleanupSandbox 
 } from './llm/tools';
 
-// Initialize the OpenAI model
 const model = new ChatOpenAI({
   model: 'gpt-3.5-turbo',
   temperature: 0.7,
@@ -75,7 +74,6 @@ const agent = createAgent({
 
 export async function GET(request: NextRequest) {
   try {
-    // const { message } = await request.json();
     const message = "Create a beautiful TODO application with add, edit, delete functionality";
 
     if (!message) {
@@ -106,21 +104,19 @@ The application would use React hooks for state management and Tailwind CSS for 
       );
     }
 
-    // Initialize E2B sandbox
-    console.log('🚀 Initializing E2B sandbox...');
+    console.log('Initializing E2B sandbox...');
     const sandbox = await initializeSandbox();
     const sandboxUrl = await getSandboxHost();
-    console.log(`✅ Sandbox initialized at: https://${sandboxUrl}`);
+    console.log(`Sandbox initialized at: https://${sandboxUrl}`);
 
-    // Execute the agent with the user's message
-    console.log('🤖 Executing agent with message:', message);
+    console.log('Executing agent with message:', message);
     const result = await agent.invoke({
       messages: [
         { role: 'user', content: message }
       ],
     });
 
-    console.log('✅ Agent execution completed');
+    console.log('Agent execution completed');
 
     return NextResponse.json({
       success: true,
@@ -130,13 +126,12 @@ The application would use React hooks for state management and Tailwind CSS for 
     });
 
   } catch (error) {
-    console.error('❌ Error in prompt API:', error);
+    console.error('Error in prompt API:', error);
     
-    // Cleanup sandbox on error
     try {
       await cleanupSandbox();
     } catch (cleanupError) {
-      console.error('❌ Error cleaning up sandbox:', cleanupError);
+      console.error('Error cleaning up sandbox:', cleanupError);
     }
     
     return NextResponse.json(
@@ -170,21 +165,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize E2B sandbox
-    console.log('🚀 Initializing E2B sandbox...');
+    console.log('Initializing E2B sandbox...');
     const sandbox = await initializeSandbox();
     const sandboxUrl = await getSandboxHost();
-    console.log(`✅ Sandbox initialized at: https://${sandboxUrl}`);
+    console.log(`Sandbox initialized at: https://${sandboxUrl}`);
 
-    // Execute the agent with the user's message
-    console.log('🤖 Executing agent with message:', message);
+    console.log('Executing agent with message:', message);
     const result = await agent.invoke({
       messages: [
         { role: 'user', content: message }
       ],
     });
 
-    console.log('✅ Agent execution completed');
+    console.log('Agent execution completed');
 
     return NextResponse.json({
       success: true,
@@ -194,13 +187,12 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error in prompt API:', error);
+    console.error('Error in prompt API:', error);
     
-    // Cleanup sandbox on error
     try {
       await cleanupSandbox();
     } catch (cleanupError) {
-      console.error('❌ Error cleaning up sandbox:', cleanupError);
+      console.error('Error cleaning up sandbox:', cleanupError);
     }
     
     return NextResponse.json(
@@ -221,7 +213,7 @@ export async function DELETE() {
       message: 'Sandbox cleaned up successfully'
     });
   } catch (error) {
-    console.error('❌ Error cleaning up sandbox:', error);
+    console.error('Error cleaning up sandbox:', error);
     return NextResponse.json(
       { 
         error: 'Error cleaning up sandbox',

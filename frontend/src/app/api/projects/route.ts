@@ -4,7 +4,6 @@ import prisma from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the session to verify authentication
     const session = await auth.api.getSession({
       headers: request.headers
     });
@@ -29,7 +28,6 @@ export async function POST(request: NextRequest) {
     const trimmedQuery = query.trim();
     const projectTitle = title || (trimmedQuery.length > 50 ? trimmedQuery.substring(0, 50) + '...' : trimmedQuery);
 
-    // Check if a project with the same query already exists for this user
     const existingProject = await prisma.project.findFirst({
       where: {
         userId: session.user.id,
@@ -52,10 +50,8 @@ export async function POST(request: NextRequest) {
     let project;
 
     if (existingProject) {
-      // Project already exists, return it
       project = existingProject;
       
-      // Update lastSeenAt to current time
       await prisma.project.update({
         where: { id: project.id },
         data: { lastSeenAt: new Date() }
@@ -63,7 +59,6 @@ export async function POST(request: NextRequest) {
       
       project.lastSeenAt = new Date();
     } else {
-      // Create a new project
       project = await prisma.project.create({
         data: {
           userId: session.user.id,
@@ -84,7 +79,6 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      // Create initial chat history entry with the user's query
       await prisma.chatHistory.create({
         data: {
           projectId: project.id,
@@ -122,7 +116,6 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the session to verify authentication
     const session = await auth.api.getSession({
       headers: request.headers
     });
@@ -134,7 +127,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all projects for the authenticated user
     const projects = await prisma.project.findMany({
       where: {
         userId: session.user.id,
@@ -160,7 +152,7 @@ export async function GET(request: NextRequest) {
           orderBy: {
             createdAt: 'asc',
           },
-          take: 1, // Get the first message (user's initial query)
+          take: 1,
         },
       },
       orderBy: {

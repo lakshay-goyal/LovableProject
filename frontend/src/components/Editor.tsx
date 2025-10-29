@@ -55,7 +55,6 @@ export default function Editor() {
   const handleSelect = async (file: FileNode) => {
     if (file.isLeaf) {
       try {
-        // Show loading state
         setSelectedFile({
           language: file.language || "plaintext",
           value: "// Loading file content...",

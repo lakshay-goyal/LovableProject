@@ -33,10 +33,10 @@ export function PlaygroundProvider({ children }: { children: ReactNode }) {
   const { startHeartbeat, stopHeartbeat, recordActivity } = useSandboxHeartbeat({
     interval: 30000, // 30 seconds
     onError: (error) => {
-      console.error('❌ Heartbeat error:', error);
+      console.error('Heartbeat error:', error);
     },
     onSuccess: () => {
-      console.log('💓 Heartbeat successful');
+      console.log('Heartbeat successful');
     }
   });
 

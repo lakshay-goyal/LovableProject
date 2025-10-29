@@ -1,19 +1,15 @@
 import { Sandbox } from '@e2b/code-interpreter';
 import { z } from 'zod';
 
-// Global sandbox instance
 let sandbox: Sandbox | null = null;
 
-// Heartbeat tracking
 let lastActivityTime = Date.now();
 
-// Record activity function
 function recordActivity(action: string) {
   lastActivityTime = Date.now();
-  console.log(`💓 Activity recorded: ${action} at ${new Date().toISOString()}`);
+  console.log(`Activity recorded: ${action} at ${new Date().toISOString()}`);
 }
 
-// Initialize sandbox
 export async function initializeSandbox(): Promise<Sandbox> {
   if (!sandbox) {
     const TEMPLATE_ID = "m9jx9or7gpa5tdf7q7hy";
@@ -23,13 +19,11 @@ export async function initializeSandbox(): Promise<Sandbox> {
   return sandbox;
 }
 
-// Get sandbox host URL
 export async function getSandboxHost(): Promise<string> {
   const sandboxInstance = await initializeSandbox();
   return sandboxInstance.getHost(5173);
 }
 
-// Create file tool
 export const createFile = {
   name: 'createFile',
   description: 'Create a new file at a specified location in the E2B sandbox',
@@ -42,36 +36,32 @@ export const createFile = {
       recordActivity('create_file');
       const sandboxInstance = await initializeSandbox();
       
-      // Validate file path
       if (!location.startsWith('src/')) {
-        return `❌ Error: File path must start with 'src/' but got '${location}'. Use relative paths like 'src/components/ComponentName.tsx'`;
+        return `Error: File path must start with 'src/' but got '${location}'. Use relative paths like 'src/components/ComponentName.tsx'`;
       }
       
-      // Ensure the directory exists
       const pathParts = location.split('/');
-      if (pathParts.length > 2) { // More than just 'src/filename'
+      if (pathParts.length > 2) {
         const dirPath = pathParts.slice(0, -1).join('/');
         try {
           await sandboxInstance.files.makeDir(dirPath);
-          console.log(`📁 Directory created: ${dirPath}`);
+          console.log(`Directory created: ${dirPath}`);
         } catch (dirError) {
-          console.log(`📁 Directory may already exist: ${dirPath}`);
+          console.log(`Directory may already exist: ${dirPath}`);
         }
       }
       
-      // Create the file
       await sandboxInstance.files.write(location, content);
       
-      console.log(`✅ File created at ${location}`);
-      return `✅ File created successfully at ${location}\n📄 Content length: ${content.length} characters`;
+      console.log(`File created at ${location}`);
+      return `File created successfully at ${location}\nContent length: ${content.length} characters`;
     } catch (error) {
-      console.error(`❌ Error creating file at ${location}:`, error);
-      return `❌ Error creating file at ${location}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error(`Error creating file at ${location}:`, error);
+      return `Error creating file at ${location}: ${error instanceof Error ? error.message : 'Unknown error'}`;
     }
   },
 };
 
-// Update file tool
 export const updateFile = {
   name: 'updateFile',
   description: 'Update an existing file at a specified location in the E2B sandbox',
@@ -84,30 +74,26 @@ export const updateFile = {
       recordActivity('update_file');
       const sandboxInstance = await initializeSandbox();
       
-      // Validate file path
       if (!location.startsWith('src/')) {
-        return `❌ Error: File path must start with 'src/' but got '${location}'. Use relative paths like 'src/components/ComponentName.tsx'`;
+        return `Error: File path must start with 'src/' but got '${location}'. Use relative paths like 'src/components/ComponentName.tsx'`;
       }
       
-      // Check if file exists
       const exists = await sandboxInstance.files.exists(location);
       if (!exists) {
-        return `❌ File ${location} does not exist. Use createFile to create it first.`;
+        return `File ${location} does not exist. Use createFile to create it first.`;
       }
       
-      // Update the file
       await sandboxInstance.files.write(location, content);
       
-      console.log(`✅ File updated at ${location}`);
-      return `✅ File updated successfully at ${location}\n📄 Content length: ${content.length} characters`;
+      console.log(`File updated at ${location}`);
+      return `File updated successfully at ${location}\nContent length: ${content.length} characters`;
     } catch (error) {
-      console.error(`❌ Error updating file at ${location}:`, error);
-      return `❌ Error updating file at ${location}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error(`Error updating file at ${location}:`, error);
+      return `Error updating file at ${location}: ${error instanceof Error ? error.message : 'Unknown error'}`;
     }
   },
 };
 
-// Delete file tool
 export const deleteFile = {
   name: 'deleteFile',
   description: 'Delete a file at a specified location in the E2B sandbox',
@@ -119,30 +105,26 @@ export const deleteFile = {
       recordActivity('delete_file');
       const sandboxInstance = await initializeSandbox();
       
-      // Validate file path
       if (!location.startsWith('src/')) {
-        return `❌ Error: File path must start with 'src/' but got '${location}'. Use relative paths like 'src/components/ComponentName.tsx'`;
+          return `Error: File path must start with 'src/' but got '${location}'. Use relative paths like 'src/components/ComponentName.tsx'`;
       }
       
-      // Check if file exists
       const exists = await sandboxInstance.files.exists(location);
       if (!exists) {
-        return `❌ File ${location} does not exist.`;
+        return `File ${location} does not exist.`;
       }
       
-      // Delete the file
       await sandboxInstance.files.remove(location);
       
-      console.log(`✅ File deleted at ${location}`);
-      return `✅ File deleted successfully at ${location}`;
+      console.log(`File deleted at ${location}`);
+      return `File deleted successfully at ${location}`;
     } catch (error) {
-      console.error(`❌ Error deleting file at ${location}:`, error);
-      return `❌ Error deleting file at ${location}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error(`Error deleting file at ${location}:`, error);
+      return `Error deleting file at ${location}: ${error instanceof Error ? error.message : 'Unknown error'}`;
     }
   },
 };
 
-// Read file tool
 export const readFile = {
   name: 'readFile',
   description: 'Read the contents of a file at a specified location in the E2B sandbox',
@@ -154,30 +136,26 @@ export const readFile = {
       recordActivity('read_file');
       const sandboxInstance = await initializeSandbox();
       
-      // Validate file path
       if (!location.startsWith('src/')) {
-        return `❌ Error: File path must start with 'src/' but got '${location}'. Use relative paths like 'src/components/ComponentName.tsx'`;
+        return `Error: File path must start with 'src/' but got '${location}'. Use relative paths like 'src/components/ComponentName.tsx'`;
       }
       
-      // Check if file exists
       const exists = await sandboxInstance.files.exists(location);
       if (!exists) {
-        return `❌ File ${location} does not exist.`;
+        return `File ${location} does not exist.`;
       }
       
-      // Read the file
       const content = await sandboxInstance.files.read(location);
       
-      console.log(`✅ File read at ${location}`);
-      return `📄 File contents of ${location}:\n\n${content}\n\n📊 Content length: ${content.length} characters`;
+      console.log(`File read at ${location}`);
+      return `File contents of ${location}:\n\n${content}\n\nContent length: ${content.length} characters`;
     } catch (error) {
-      console.error(`❌ Error reading file at ${location}:`, error);
-      return `❌ Error reading file at ${location}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error(`Error reading file at ${location}:`, error);
+      return `Error reading file at ${location}: ${error instanceof Error ? error.message : 'Unknown error'}`;
     }
   },
 };
 
-// List directory tool
 export const listDirectory = {
   name: 'listDirectory',
   description: 'List files and directories in a specified path in the E2B sandbox',
@@ -189,53 +167,48 @@ export const listDirectory = {
       recordActivity('list_directory');
       const sandboxInstance = await initializeSandbox();
       
-      // Normalize path
       const normalizedPath = location.endsWith('/') ? location : `${location}/`;
       
-      // Check if directory exists
       const exists = await sandboxInstance.files.exists(normalizedPath);
       if (!exists) {
-        return `❌ Directory ${normalizedPath} does not exist.`;
+        return `Directory ${normalizedPath} does not exist.`;
       }
       
-      // List directory contents
       const contents = await sandboxInstance.files.list(normalizedPath);
       
-      console.log(`✅ Directory listed at ${normalizedPath}`);
+      console.log(`Directory listed at ${normalizedPath}`);
       
       if (contents.length === 0) {
-        return `📁 Directory ${normalizedPath} is empty`;
+        return `Directory ${normalizedPath} is empty`;
       }
       
       const formattedContents = contents.map((item: any) => {
-        const icon = item.isDir ? '📁' : '📄';
+        const icon = item.isDir ? 'DIR' : 'FILE';
         const type = item.isDir ? 'DIR' : 'FILE';
         return `${icon} ${item.name} (${type})`;
       }).join('\n');
       
-      return `📁 Directory contents of ${normalizedPath}:\n\n${formattedContents}\n\nTotal: ${contents.length} items`;
+          return `Directory contents of ${normalizedPath}:\n\n${formattedContents}\n\nTotal: ${contents.length} items`;
     } catch (error) {
-      console.error(`❌ Error listing directory at ${location}:`, error);
-      return `❌ Error listing directory at ${location}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error(`Error listing directory at ${location}:`, error);
+      return `Error listing directory at ${location}: ${error instanceof Error ? error.message : 'Unknown error'}`;
     }
   },
 };
 
-// Cleanup function
 export async function cleanupSandbox(): Promise<void> {
   if (sandbox) {
     try {
       recordActivity('sandbox_cleanup');
       await sandbox.kill();
       sandbox = null;
-      console.log('✅ Sandbox cleaned up');
+      console.log('Sandbox cleaned up');
     } catch (error) {
-      console.error('❌ Error cleaning up sandbox:', error);
+      console.error('Error cleaning up sandbox:', error);
     }
   }
 }
 
-// Export activity tracking for heartbeat API
 export function getLastActivityTime(): number {
   return lastActivityTime;
 }
