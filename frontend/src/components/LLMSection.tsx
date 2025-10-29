@@ -293,357 +293,309 @@ export default function LLMSection({ userQuery }: LLMSectionProps) {
 
   return (
     <TooltipProvider>
-      <div className="w-80 h-screen border-l border-border bg-background flex flex-col">
-        <div className="p-0 flex flex-col h-screen">
-          {/* Header Panel - Fixed height */}
-          <div className="flex-shrink-0 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-b">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <Brain className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-lg text-gray-900 dark:text-white">AI Assistant</h2>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {aiPersonality === 'helpful' ? '🤝 Helpful Mode' : 
-                       aiPersonality === 'technical' ? '⚙️ Technical Mode' : '🎨 Creative Mode'}
-                    </p>
-                  </div>
+      <div className="w-72 h-screen border-l border-border bg-background flex flex-col overflow-hidden">
+        {/* Header Panel - Fixed height */}
+        <div className="flex-shrink-0 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
+          <div className="p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center shadow-md">
+                  <Brain className="w-4 h-4 text-white dark:text-black" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setShowSettings(!showSettings)}>
-                        <Settings className="w-4 h-4 mr-2" />
-                        Settings
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={clearConversation}>
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Clear Chat
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={exportConversation}>
-                        <Download className="w-4 h-4 mr-2" />
-                        Export Chat
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Share className="w-4 h-4 mr-2" />
-                        Share Chat
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <div>
+                  <h2 className="font-semibold text-base text-black dark:text-white">AI Assistant</h2>
                 </div>
               </div>
-              
             </div>
           </div>
+        </div>
 
-          {/* Main Chat Panel - Flexible height */}
-          <div className="flex-1 min-h-0 flex flex-col">
-              <div className="h-full flex flex-col">
-                {/* Settings Panel */}
-                {showSettings && (
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 border-b">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">AI Personality</span>
-                        <div className="flex gap-1">
-                          {['helpful', 'technical', 'creative'].map((mode) => (
-                            <Button
-                              key={mode}
-                              variant={aiPersonality === mode ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => setAiPersonality(mode as any)}
-                              className="h-7 text-xs capitalize"
-                            >
-                              {mode}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Temperature: {aiTemperature[0]}</span>
-                        </div>
-                        <Slider
-                          value={aiTemperature}
-                          onValueChange={setAiTemperature}
-                          max={1}
-                          min={0}
-                          step={0.1}
-                          className="w-full"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Creativity: {aiCreativity[0]}</span>
-                        </div>
-                        <Slider
-                          value={aiCreativity}
-                          onValueChange={setAiCreativity}
-                          max={1}
-                          min={0}
-                          step={0.1}
-                          className="w-full"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                
-                {/* Messages Area */}
-                <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
-                  <div className="space-y-4">
-                    {messages.length === 0 ? (
-                      <div className="flex items-center justify-center h-64">
-                        <div className="text-center space-y-4">
-                          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto shadow-2xl">
-                            <Brain className="w-12 h-12 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-xl text-gray-900 dark:text-white">Welcome to AI Assistant</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                              Choose a mode and start a conversation
-                            </p>
-                          </div>
-                          <div className="flex gap-2 justify-center">
-                            <Badge variant="outline" className="text-xs px-3 py-1">
-                              <Lightbulb className="w-3 h-3 mr-1" />
-                              Helpful
-                            </Badge>
-                            <Badge variant="outline" className="text-xs px-3 py-1">
-                              <Code className="w-3 h-3 mr-1" />
-                              Technical
-                            </Badge>
-                            <Badge variant="outline" className="text-xs px-3 py-1">
-                              <Sparkles className="w-3 h-3 mr-1" />
-                              Creative
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex items-start gap-4 ${
-                            message.sender === 'user' ? 'flex-row-reverse' : ''
-                          }`}
-                        >
-                          <Avatar className="w-10 h-10 shadow-md">
-                            <AvatarFallback className={
-                              message.sender === 'user' 
-                                ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white' 
-                                : 'bg-gradient-to-br from-purple-500 to-blue-500 text-white'
-                            }>
-                              {message.sender === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
-                            </AvatarFallback>
-                          </Avatar>
-                          
-                          <div className={`flex-1 max-w-[80%] ${
-                            message.sender === 'user' ? 'text-right' : ''
-                          }`}>
-                            <div className={`rounded-2xl px-5 py-4 text-sm shadow-lg ${
-                              message.sender === 'user'
-                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white ml-auto'
-                                : message.isCode
-                                ? 'bg-gray-900 text-gray-100 border border-gray-700 font-mono'
-                                : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700'
-                            }`}>
-                              {message.isCode ? (
-                                <div className="space-y-3">
-                                  <div className="flex items-center justify-between text-xs text-gray-400 border-b border-gray-700 pb-2">
-                                    <div className="flex items-center gap-2">
-                                      <Code className="w-3 h-3" />
-                                      <span className="font-mono">{message.language || 'code'}</span>
-                                    </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
-                                      onClick={() => copyToClipboard(message.content)}
-                                    >
-                                      <Copy className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                  <pre className="whitespace-pre-wrap text-sm leading-relaxed">
-                                    <code>{message.content}</code>
-                                  </pre>
-                                </div>
-                              ) : (
-                                <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                              )}
-                            </div>
-                            
-                            <div className={`flex items-center gap-3 mt-3 ${
-                              message.sender === 'user' ? 'justify-end' : 'justify-start'
-                            }`}>
-                              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                <Clock className="w-3 h-3" />
-                                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </div>
-                              
-                              {message.sender === 'ai' && (
-                                <div className="flex items-center gap-1">
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 w-7 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-                                        onClick={() => copyToClipboard(message.content)}
-                                      >
-                                        <Copy className="w-3 h-3" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Copy message</TooltipContent>
-                                  </Tooltip>
-                                  
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className={`h-7 w-7 p-0 hover:bg-yellow-100 dark:hover:bg-yellow-900 rounded-full ${
-                                          message.isStarred ? 'text-yellow-500' : 'text-gray-400'
-                                        }`}
-                                        onClick={() => toggleStar(message.id)}
-                                      >
-                                        <Star className={`w-3 h-3 ${message.isStarred ? 'fill-current' : ''}`} />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      {message.isStarred ? 'Remove from favorites' : 'Add to favorites'}
-                                    </TooltipContent>
-                                  </Tooltip>
-                                  
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 w-7 p-0 hover:bg-green-100 dark:hover:bg-green-900 rounded-full"
-                                        onClick={() => addReaction(message.id, 'thumbsUp')}
-                                      >
-                                        <ThumbsUp className="w-3 h-3" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Like this response</TooltipContent>
-                                  </Tooltip>
-                                  
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 w-7 p-0 hover:bg-red-100 dark:hover:bg-red-900 rounded-full"
-                                        onClick={() => addReaction(message.id, 'thumbsDown')}
-                                      >
-                                        <ThumbsDown className="w-3 h-3" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Dislike this response</TooltipContent>
-                                  </Tooltip>
-                                  
-                                  {message.reactions && (message.reactions.thumbsUp > 0 || message.reactions.thumbsDown > 0) && (
-                                    <div className="flex items-center gap-2 text-xs text-gray-500 ml-2">
-                                      {message.reactions.thumbsUp > 0 && (
-                                        <span className="flex items-center gap-1 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full">
-                                          <ThumbsUp className="w-3 h-3" />
-                                          {message.reactions.thumbsUp}
-                                        </span>
-                                      )}
-                                      {message.reactions.thumbsDown > 0 && (
-                                        <span className="flex items-center gap-1 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full">
-                                          <ThumbsDown className="w-3 h-3" />
-                                          {message.reactions.thumbsDown}
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                    
-                    {/* Typing indicator */}
-                    {isTyping && (
-                      <div className="flex items-start gap-4">
-                        <Avatar className="w-10 h-10 shadow-md">
-                          <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white">
-                            <Bot className="w-5 h-5" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="bg-white dark:bg-gray-800 rounded-2xl px-5 py-4 text-sm border border-gray-200 dark:border-gray-700 shadow-lg">
-                            <div className="flex items-center gap-3">
-                              <div className="flex space-x-1">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                              </div>
-                              <span className="text-gray-500 text-sm">AI is typing...</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-
-            {/* Input Panel - Fixed height */}
-            <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-t">
-                <div className="p-4 h-full flex flex-col">
-                  {/* Input Area */}
-                  <div className="flex gap-3 mb-3">
-                    <div className="flex-1 relative">
-                      <Input
-                        value={inputMessage}
-                        onChange={(e) => setInputMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        placeholder="Ask me anything..."
-                        className="pr-16 text-sm border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-800 h-12"
-                        disabled={isLoading}
-                      />
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          💬
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setIsMuted(!isMuted)}
-                          className="h-6 w-6 p-0"
-                        >
-                          {isMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-                        </Button>
-                      </div>
-                    </div>
+        {/* Settings Panel */}
+        {showSettings && (
+          <div className="flex-shrink-0 p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-black dark:text-white">AI Personality</span>
+                <div className="flex gap-1">
+                  {['helpful', 'technical', 'creative'].map((mode) => (
                     <Button
-                      onClick={handleSendMessage}
-                      disabled={!inputMessage.trim() || isLoading}
+                      key={mode}
+                      variant={aiPersonality === mode ? 'default' : 'outline'}
                       size="sm"
-                      className="px-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg h-12"
+                      onClick={() => setAiPersonality(mode as any)}
+                      className={`h-6 text-xs capitalize px-2 ${
+                        aiPersonality === mode 
+                          ? 'bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200' 
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}
                     >
-                      {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Send className="w-4 h-4" />
-                      )}
+                      {mode}
                     </Button>
-                  </div>
+                  ))}
                 </div>
               </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-black dark:text-white">Temperature: {aiTemperature[0]}</span>
+                </div>
+                <Slider
+                  value={aiTemperature}
+                  onValueChange={setAiTemperature}
+                  max={1}
+                  min={0}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-black dark:text-white">Creativity: {aiCreativity[0]}</span>
+                </div>
+                <Slider
+                  value={aiCreativity}
+                  onValueChange={setAiCreativity}
+                  max={1}
+                  min={0}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Messages Area - Scrollable */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea ref={scrollAreaRef} className="h-full">
+            <div className="p-3 space-y-3">
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-48">
+                  <div className="text-center space-y-3">
+                    <div className="w-16 h-16 bg-black dark:bg-white rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                      <Brain className="w-8 h-8 text-white dark:text-black" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg text-black dark:text-white">AI Assistant</h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                        Start a conversation
+                      </p>
+                    </div>
+                    <div className="flex gap-1 justify-center">
+                      <Badge variant="outline" className="text-xs px-2 py-1 border-gray-300 dark:border-gray-600">
+                        <Lightbulb className="w-3 h-3 mr-1" />
+                        Helpful
+                      </Badge>
+                      <Badge variant="outline" className="text-xs px-2 py-1 border-gray-300 dark:border-gray-600">
+                        <Code className="w-3 h-3 mr-1" />
+                        Technical
+                      </Badge>
+                      <Badge variant="outline" className="text-xs px-2 py-1 border-gray-300 dark:border-gray-600">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Creative
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex items-start gap-3 ${
+                      message.sender === 'user' ? 'flex-row-reverse' : ''
+                    }`}
+                  >
+                    <Avatar className="w-8 h-8 shadow-sm">
+                      <AvatarFallback className={
+                        message.sender === 'user' 
+                          ? 'bg-black dark:bg-white text-white dark:text-black text-xs' 
+                          : 'bg-gray-800 dark:bg-gray-200 text-white dark:text-black text-xs'
+                      }>
+                        {message.sender === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className={`flex-1 max-w-[85%] ${
+                      message.sender === 'user' ? 'text-right' : ''
+                    }`}>
+                      <div className={`rounded-xl px-3 py-2 text-sm shadow-sm ${
+                        message.sender === 'user'
+                          ? 'bg-black dark:bg-white text-white dark:text-black ml-auto'
+                          : message.isCode
+                          ? 'bg-gray-900 dark:bg-gray-100 text-gray-100 dark:text-gray-900 border border-gray-700 dark:border-gray-300 font-mono'
+                          : 'bg-white dark:bg-gray-900 text-black dark:text-white border border-gray-200 dark:border-gray-700'
+                      }`}>
+                        {message.isCode ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-600 border-b border-gray-700 dark:border-gray-300 pb-1">
+                              <div className="flex items-center gap-1">
+                                <Code className="w-3 h-3" />
+                                <span className="font-mono">{message.language || 'code'}</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0 text-gray-400 dark:text-gray-600 hover:text-white dark:hover:text-black hover:bg-gray-700 dark:hover:bg-gray-300"
+                                onClick={() => copyToClipboard(message.content)}
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <pre className="whitespace-pre-wrap text-xs leading-relaxed">
+                              <code>{message.content}</code>
+                            </pre>
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap leading-relaxed text-sm">{message.content}</p>
+                        )}
+                      </div>
+                      
+                      <div className={`flex items-center gap-2 mt-2 ${
+                        message.sender === 'user' ? 'justify-end' : 'justify-start'
+                      }`}>
+                        <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                          <Clock className="w-3 h-3" />
+                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        
+                        {message.sender === 'ai' && (
+                          <div className="flex items-center gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                                  onClick={() => copyToClipboard(message.content)}
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Copy message</TooltipContent>
+                            </Tooltip>
+                            
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className={`h-6 w-6 p-0 hover:bg-yellow-100 dark:hover:bg-yellow-900 rounded-full ${
+                                    message.isStarred ? 'text-yellow-500' : 'text-gray-400'
+                                  }`}
+                                  onClick={() => toggleStar(message.id)}
+                                >
+                                  <Star className={`w-3 h-3 ${message.isStarred ? 'fill-current' : ''}`} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {message.isStarred ? 'Remove from favorites' : 'Add to favorites'}
+                              </TooltipContent>
+                            </Tooltip>
+                            
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 hover:bg-green-100 dark:hover:bg-green-900 rounded-full"
+                                  onClick={() => addReaction(message.id, 'thumbsUp')}
+                                >
+                                  <ThumbsUp className="w-3 h-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Like this response</TooltipContent>
+                            </Tooltip>
+                            
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900 rounded-full"
+                                  onClick={() => addReaction(message.id, 'thumbsDown')}
+                                >
+                                  <ThumbsDown className="w-3 h-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Dislike this response</TooltipContent>
+                            </Tooltip>
+                            
+                            {message.reactions && (message.reactions.thumbsUp > 0 || message.reactions.thumbsDown > 0) && (
+                              <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 ml-1">
+                                {message.reactions.thumbsUp > 0 && (
+                                  <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">
+                                    <ThumbsUp className="w-3 h-3" />
+                                    {message.reactions.thumbsUp}
+                                  </span>
+                                )}
+                                {message.reactions.thumbsDown > 0 && (
+                                  <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">
+                                    <ThumbsDown className="w-3 h-3" />
+                                    {message.reactions.thumbsDown}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+              
+              {/* Typing indicator */}
+              {isTyping && (
+                <div className="flex items-start gap-3">
+                  <Avatar className="w-8 h-8 shadow-sm">
+                    <AvatarFallback className="bg-gray-800 dark:bg-gray-200 text-white dark:text-black text-xs">
+                      <Bot className="w-4 h-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="flex space-x-1">
+                          <div className="w-1.5 h-1.5 bg-black dark:bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-1.5 h-1.5 bg-black dark:bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-1.5 h-1.5 bg-black dark:bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                        <span className="text-gray-600 dark:text-gray-400 text-xs">AI is typing...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Input Panel - Fixed height */}
+        <div className="flex-shrink-0 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800">
+          <div className="p-3">
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Input
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask me anything..."
+                  className="pr-12 text-sm border-gray-300 dark:border-gray-600 focus:border-black dark:focus:border-white focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-900 h-9"
+                  disabled={isLoading}
+                />
+              </div>
+              <Button
+                onClick={handleSendMessage}
+                disabled={!inputMessage.trim() || isLoading}
+                size="sm"
+                className="px-4 bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 shadow-md h-9"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
