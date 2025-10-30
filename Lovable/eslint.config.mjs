@@ -9,17 +9,29 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+export default [
   {
-    ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
+    extends: [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:react/recommended",
+      "plugin:react-hooks/recommended",
+      "plugin:@next/next/recommended",
     ],
-  },
+    parser: "@typescript-eslint/parser",
+    plugins: ["@typescript-eslint", "react", "react-hooks"],
+    rules: {
+      "react/react-in-jsx-scope": "off",
+      "react/prop-types": "off",
+      "@typescript-eslint/no-this-alias": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-unused-vars": "warn"
+    },
+    settings: {
+      react: {
+        version: "detect",
+      },
+    },
+    ignorePatterns: ["node_modules/", ".next/", "out/"],
+  }
 ];
-
-export default eslintConfig;
