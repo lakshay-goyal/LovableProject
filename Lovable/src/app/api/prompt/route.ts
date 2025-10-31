@@ -72,6 +72,7 @@ const agent = createAgent({
   systemPrompt: SYSTEM_PROMPT,
 });
 
+// For testing only
 export async function GET(request: NextRequest) {
   try {
     const message = "Create a beautiful TODO application with add, edit, delete functionality";

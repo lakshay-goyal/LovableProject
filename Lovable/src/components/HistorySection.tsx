@@ -199,7 +199,7 @@ export default function HistorySection({ isAuthenticated }: HistorySectionProps)
                       <Code className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="text-base font-semibold text-slate-900 truncate">
+                      <CardTitle className="text-base font-semibold text-slate-900 truncate text-white">
                         {p.title}
                       </CardTitle>
                       <Badge
@@ -237,9 +237,10 @@ export default function HistorySection({ isAuthenticated }: HistorySectionProps)
                   {viewMode === "grid" && (
                     <Button
                       variant="ghost"
-                      className="w-full mt-4 bg-slate-50 hover:bg-blue-50"
+                      className="w-full mt-4 bg-slate-50 hover:bg-blue-50 hover:text-white"
                     >
-                      <Play className="h-4 w-4 mr-2" /> Open Project
+                      <Play className="h-4 w-4 mr-2 text-black" /> 
+                      <p className="text-black" >Open Project</p>
                     </Button>
                   )}
                 </Card>
