@@ -108,7 +108,7 @@ export default function HistorySection({ isAuthenticated }: HistorySectionProps)
 
   if (!isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-50 to-white px-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-black from-slate-50 to-white px-4">
         <Card className="max-w-md text-center shadow-none border border-slate-200">
           <CardContent className="pt-10 pb-12">
             <Empty>
@@ -136,7 +136,7 @@ export default function HistorySection({ isAuthenticated }: HistorySectionProps)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white px-6 py-16">
+    <div className="min-h-screen bg-gradient-to-black from-slate-50 to-white px-6 py-16">
       <div className="mx-auto max-w-6xl">
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8">
@@ -199,7 +199,7 @@ export default function HistorySection({ isAuthenticated }: HistorySectionProps)
                       <Code className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="text-base font-semibold text-slate-900 truncate text-white">
+                      <CardTitle className="text-base font-semibold text-slate-900 truncate">
                         {p.title}
                       </CardTitle>
                       <Badge
