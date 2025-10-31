@@ -15,7 +15,7 @@ import {
 } from './llm/tools';
 
 const model = new ChatOpenAI({
-  model: 'gpt-3.5-turbo',
+  model: 'gpt-4o',
   temperature: 0.7,
   openAIApiKey: process.env.OPENAI_API_KEY,
 });
